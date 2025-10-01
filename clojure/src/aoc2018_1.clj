@@ -29,3 +29,14 @@
 ;; 예) +3, +3, +4, -2, -4 는 10이 처음으로 두번 나오는 숫자임.
 ;; 0 -> 3 (+3) -> 6 (+3) -> 10(+4) -> 8(-2) -> 4(-4) -> 7(+3) -> 10(+3) -> ...
 
+;; set 을 생성하고 set 에 포함되어 있다면 처음으로 두번 나오는 숫자로 판단하여 리턴함.
+(defn first-duplicated-sum [resource-path]
+  (let [nums (cycle (read-lines resource-path))]
+    (loop [result-set #{}
+           [num & more] (reductions + 0 nums)]
+      (if (result-set num)
+        num
+        (recur (conj result-set num) more)))))
+
+(comment
+  (println (first-duplicated-sum "2018_1.txt")))
