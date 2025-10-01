@@ -4,18 +4,16 @@
    [clojure.string :as str]))
 
 ;; 공통 함수
-;; 문자열 시퀀스를 정수 시퀀스로 변환하는 함수
-(def parse-ints
-  (comp
-   (partial map #(Integer/parseInt %))
-   (partial remove str/blank?)
-   (partial map str/trim)))
+;; trim 과 함께 문제열을 정수로 변환
+(defn parse-int [string]
+  (Integer/parseInt (str/trim string)))
 
 ;; resource-path 에 있는 파일을 읽어 정수 시퀀스로 반환
 (defn- read-lines [resource-path]
   (->> (slurp (io/resource resource-path))
        (str/split-lines)
-       (parse-ints)))
+       (remove str/blank?)
+       (map parse-int)))
 
 ;; 파트 1
 ;; 주어진 입력의 모든 숫자를 더하시오.
