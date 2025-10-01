@@ -4,12 +4,14 @@
    [clojure.string :as str]))
 
 ;; 공통 함수
-;; trim 과 함께 문제열을 정수로 변환
-(defn parse-int [string]
+(defn- parse-int 
+  "trim 과 함께 문제열을 정수로 변환"
+  [string]
   (Integer/parseInt (str/trim string)))
 
-;; resource-path 에 있는 파일을 읽어 정수 시퀀스로 반환
-(defn- read-lines [resource-path]
+(defn- read-lines 
+  "resource-path 에 있는 파일을 읽어 정수 시퀀스로 반환"
+  [resource-path]
   (->> (slurp (io/resource resource-path))
        (str/split-lines)
        (remove str/blank?)
@@ -27,11 +29,12 @@
 ;; 예) +3, +3, +4, -2, -4 는 10이 처음으로 두번 나오는 숫자임.
 ;; 0 -> 3 (+3) -> 6 (+3) -> 10(+4) -> 8(-2) -> 4(-4) -> 7(+3) -> 10(+3) -> ...
 
-;; set 에 누적 합을 기록하고, 새로운 합이 set 에 포함되어 있다면 처음으로 두번 나오는 숫자로 판단하여 리턴함
-(defn first-duplicated-sum [resource-path]
+(defn first-duplicated-sum
+  "set 에 누적 합을 기록하고, 새로운 합이 set 에 포함되어 있다면 처음으로 두번 나오는 숫자로 판단하여 리턴함"
+  [resource-path]
   (let [nums (cycle (read-lines resource-path))]
     (loop [result-set #{}
-           [num & more] (reductions + 0 nums)]
+           [num & more] (reductions + nums)]
       (if (result-set num)
         num
         (recur (conj result-set num) more)))))
