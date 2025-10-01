@@ -37,4 +37,4 @@
         (recur (conj result-set num) more)))))
 
 (comment
-  (println (first-duplicated-sum "2018_1.txt")))
+  (println (first-duplicated-sum "2018_1.txt"))) ; 80598
