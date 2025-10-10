@@ -1,4 +1,4 @@
-(ns aoc2018_3
+(ns aoc2018-3
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -14,14 +14,11 @@
 (defn- parse-claim
   "#1 @ 393,863: 11x29 를 {:id :x :y :width :height} 로 변환하는 함수"
   [line]
-  (let [[_ id x y width height] (re-matches
-                                 #"#(\d+) @ (\d+),(\d+): (\d+)x(\d+)"
-                                 line)]
-    {:id (parse-long id)
-     :x (parse-long x)
-     :y (parse-long y)
-     :width (parse-long width)
-     :height (parse-long height)}))
+  (let [[_ & nums] (re-matches
+                    #"#(\d+) @ (\d+),(\d+): (\d+)x(\d+)"
+                    line)
+        keywords [:id :x :y :width :height]]
+    (zipmap keywords (map parse-long nums))))
 
 (defn- read-claims
   "공통 IO + 파싱 함수"
@@ -36,8 +33,10 @@
         point-y (range y (+ y height))]
     {[point-x point-y] #{id}}))
 
-(defn- overlapped? []
-  (fn [ids] (> (count ids) 1)))
+(defn- overlapped?
+  "중복된 부분이 있는지 판단하는 함수"
+  [ids]
+  (> (count ids) 1))
 
 ;; 파트 1
 ;; 다음과 같은 입력이 주어짐.
@@ -68,7 +67,7 @@
        (mapcat expand-points)
        (apply merge-with union)
        (vals)
-       (filter (overlapped?))
+       (filter overlapped?)
        (count)))
 
 (comment (count-overlapping-fabric))
@@ -86,7 +85,7 @@
     (->> (mapcat expand-points claims)
          (apply merge-with union)
          (vals)
-         (filter (overlapped?))
+         (filter overlapped?)
          (reduce (fn [set-ids dup-ids]
                    (difference set-ids dup-ids))
                  ids)
