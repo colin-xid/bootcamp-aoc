@@ -8,19 +8,18 @@
   [resource-path]
   (->> (slurp (io/resource resource-path))
        (str/split-lines)
-       (remove str/blank?)
-       (sort)))
+       (remove str/blank?)))
 
-(defn- get-guard-id
-  "라인에서 가드의 id 를 추출하는 함수"
-  [line]
-  (->> (str/replace (re-find #"#\d+" line) "#" "")
+(defn- parse-guard-id
+  "기록에서 가드의 id 를 추출하는 함수"
+  [record]
+  (->> (str/replace (re-find #"#\d+" record) "#" "")
        (parse-long)))
 
-(defn- get-minute
-  "라인에서 분을 추출하는 함수"
-  [line]
-  (->> (str/replace (re-find #":\d+" line) ":" "")
+(defn- parse-minute
+  "기록에서 분을 추출하는 함수"
+  [record]
+  (->> (str/replace (re-find #":\d+" record) ":" "")
        (parse-long)))
 
 (defn- create-guard-map
@@ -36,21 +35,25 @@
       result
 
       (str/includes? line "Guard")
-      (recur result (get-guard-id line) sleep-time more)
+      (recur result (parse-guard-id line) sleep-time more)
 
       (str/includes? line "falls asleep")
-      (recur result guard-id (get-minute line) more)
+      (recur result guard-id (parse-minute line) more)
 
       (str/includes? line "wakes up")
-      (recur (conj result {guard-id [{:sleep sleep-time :wake-up (get-minute line)}]}) guard-id sleep-time more))))
+      ;; 밖으로 꺼낼 필요가 있어보임
+      (recur (conj result {guard-id [{:sleep sleep-time :wake-up (parse-minute line)}]}) guard-id sleep-time more))))
 
 (defn- calculate-sleep-duration
   "총 잠들어있는 시간을 map 에 추가하는 함수"
   [[guard-id intervals]]
-  {:id guard-id
-   :sleep-duration (reduce + (map (fn [{:keys [sleep wake-up]}]
-                                    (- wake-up sleep)) intervals))
-   :value intervals})
+  (let
+   [sleep-duration (->> intervals
+                        (map (fn [{:keys [sleep wake-up]}] (- wake-up sleep)))
+                        (apply +))]
+    {:id guard-id
+     :sleep-duration sleep-duration
+     :intervals intervals}))
 
 (defn- find-spent-minute
   "가장 많이 잠들어있는 분과 횟수을 찾는 함수"
@@ -90,35 +93,40 @@
 ;; 만약 20번 가드가 0시 10분~36분, 다음날 0시 5분~11분, 다다음날 0시 11분~13분 이렇게 잠들어 있었다면, “11분“이 가장 빈번하게 잠들어 있던 ‘분’. 그럼 답은 20 * 11 = 220.
 
 (defn find-sleepiest-guard
-  []
-  (let [sleepiest-guard (->> (read-lines "2018_4.txt")
+  [resource-path]
+  (let [sleepiest-guard (->> (read-lines resource-path)
+                             (sort)
                              (create-guard-map)
                              (apply merge-with into)
                              (map calculate-sleep-duration)
                              (apply max-key :sleep-duration))
-        sleepiest-id (:id sleepiest-guard)]
-    (->> (:value sleepiest-guard)
-         (find-spent-minute)
-         (key)
-         (* sleepiest-id))))
+        sleepiest-id (:id sleepiest-guard)
+        intervals (:intervals sleepiest-guard)]
+    (-> (find-spent-minute intervals)
+        (key)
+        (* sleepiest-id))))
 
-(comment (find-sleepiest-guard))
+(comment (find-sleepiest-guard "2018_4.txt"))
 
 ;; 파트 2
 ;; 주어진 분(minute)에 가장 많이 잠들어 있던 가드의 ID과 그 분(minute)을 곱한 값을 구하라.
 
 (defn- multi-id-minute [guard]
-  (* (:id guard) (first (:minute guard))))
+  (* (:id guard) (:minute guard)))
 
 (defn find-minute-guard
-  []
-  (->> (read-lines "2018_4.txt")
+  [resource-path]
+  (->> (read-lines resource-path)
+       (sort)
        (create-guard-map)
        (apply merge-with into)
        (map calculate-sleep-duration)
        (map (fn [guard]
-              {:id (:id guard) :minute (find-spent-minute (:value guard))}))
-       (apply max-key (comp second :minute))
+              (let [[minute frequency] (-> guard
+                                           :intervals
+                                           find-spent-minute)]
+                {:id (:id guard) :minute minute :frequency frequency})))
+       (apply max-key :frequency)
        (multi-id-minute)))
 
-(comment (find-minute-guard))
+(comment (find-minute-guard "2018_4.txt"))
