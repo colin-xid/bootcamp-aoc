@@ -84,4 +84,5 @@
        (find-similar-box-ids)
        (common-letters)))
 
-(common-letters-boxes "2018_2.txt") ; vtnikorkulbfejvyznqgdxpaw
+(comment
+  (common-letters-boxes "2018_2.txt")) ; vtnikorkulbfejvyznqgdxpaw
