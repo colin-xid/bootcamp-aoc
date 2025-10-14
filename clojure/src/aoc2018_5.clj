@@ -20,7 +20,7 @@
   (slurp (io/resource resource-path)))
 
 (defn- unit-range
-  "캐릭터 start 에서 end 까지 포함하는 캐릭터 시퀀스를 생성한다"
+  "캐릭터 start 에서 end 까지 포함하는 캐릭터 시퀀스를 생성한다."
   [start end]
   (->> (range (int start) (inc (int end)))
        (map char)))
@@ -41,7 +41,7 @@
         a-A-pair (make-pair-pattern a-z A-Z)
         A-a-pair (make-pair-pattern A-Z a-z)]
     (-> (str a-A-pair "|" A-a-pair)
-        re-pattern)))
+        (re-pattern))))
 
 (defn fully-polymer-length
   [polymer]
@@ -73,7 +73,7 @@
        (map str)
        (reduce (fn [current-min unit]
                  (-> (remove-unit polymer unit)
-                     fully-polymer-length
+                     (fully-polymer-length)
                      (min current-min)))
                Integer/MAX_VALUE)))
 
