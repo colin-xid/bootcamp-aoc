@@ -52,6 +52,9 @@
     "nop" {:next-acc accumulator :next-index (inc index)}
     "jmp" {:next-acc accumulator :next-index (+ index argument)}))
 
+;; key 가 index 인 map 자료구조로 썼으면 됐을듯
+;; map 을 통으로 들고있는것을 언어에서 최적화해서 처리함 (변경 부분만 추적)
+;; trie 구조?
 (defn find-loop-accumulator
   "동일한 명령이 두 번째로 실행되기 직전의 accumulator 를 반환합니다."
   [boot-codes]
@@ -116,6 +119,9 @@
       "acc" instruction)
     instruction))
 
+;; flip 을 한 루프와 정답을 찾는 루프가 하나에 있어서 커보임
+;; part1 에서 썼던 것을 그대로 사용 가능한 구조
+;; 단계별로 생각하고 구현
 (defn find-terminating-acc
   "`jmp` `nop` 중 하나를 바꿔서 프로그램이 정상 종료될 때의 accumulator 값을 반환합니다."
   [boot-codes]
@@ -133,14 +139,18 @@
                                               (change-operation flipped-id)
                                               (run-operation current-acc index))]
         (cond
-          (= next-index (count instructions))
+          (= next-index (count instructions)) ;; 매번 할 필요 없음. cond 는 위에서 아래로 실행
           current-acc
 
           (visited-ids index)
           (recur 0 0 #{} rest-ids)
 
           :else
-          (recur next-index next-acc (conj visited-ids index) (cons flipped-id rest-ids)))))))
+          (recur next-index next-acc (conj visited-ids index) (cons flipped-id rest-ids))))))) 
+          ;; let 바인딩으로 가독성 / else 에도 사용 가능
+          ;; let 바인딩 안에 익명함수?
+;; conj 사용 시 자료구조마다 다름 / set -> add
+;; 시간복잡도 확인하면 좋음
 
 (comment
   (->> (read-lines "2020_8.txt")
