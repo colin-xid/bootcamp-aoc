@@ -123,7 +123,7 @@
                           (map-indexed parse-boot-code)
                           (vec))
         nop-jmp-ids (->> instructions
-                         (filter #(contains? #{"nop" "jmp"} (:operation %)))
+                         (filter #(#{"nop" "jmp"} (:operation %)))
                          (map :id))]
     (loop [index 0
            current-acc 0
