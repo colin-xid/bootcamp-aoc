@@ -92,8 +92,10 @@
          steps step-graph]
     (if (= (count ordered-step) (count step-graph))
       ordered-step
-      (let [next-step (next-available-step steps)]
-        (recur (str ordered-step next-step) (complete-step steps next-step))))))
+      (let [next-step (next-available-step steps)
+            updated-order (str ordered-step next-step)
+            remain-steps (complete-step steps next-step)]
+        (recur updated-order remain-steps)))))
 
 (defn- build-step-graph
   "지침 문자열 컬렉션을 step 그래프로 변환합니다."
