@@ -56,15 +56,14 @@
 (defn- add-step-edge
   "단일 지침을 기반으로 그래프에 edge 를 추가합니다."
   [acc {:keys [start end]}]
-  (-> acc
-      (update-in [start :child] (fnil conj (sorted-set)) end)
-      (update-in [end :parent] (fnil conj (sorted-set)) start)))
+  (if (contains? acc start)
+    (update-in acc [end :parent] (fnil conj (sorted-set)) start)
+    (assoc acc start {})))
 
 (defn- has-no-parent?
   "주어진 step 에 :parent 가 없는지 확인합니다."
   [[_ step]]
   (-> (:parent step)
-      seq
       empty?))
 
 (defn- next-available-step
