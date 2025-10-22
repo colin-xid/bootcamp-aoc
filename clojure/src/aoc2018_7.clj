@@ -159,14 +159,18 @@
              (recur (assoc workers next-step (step-duration next-step)))
              workers)))))
 
+;; reduce 를 단순 순회로 사용한 점이 아쉬움
+;; 용도에 맞는 방법을 찾아서 리펙터링 해보기
 (defn- process-work
   "작업을 min duration 만큼 실행합니다."
   [min-duration filled-workers]
-  (reduce (fn [acc worker]
-            (assoc acc (key worker) (- (val worker) min-duration)))
+  (reduce (fn [acc [step-key step-duration]]
+            (assoc acc step-key (- step-duration min-duration)))
           filled-workers
           filled-workers))
 
+;; docstring 만 봤을 때 어떤 값이 들어와서 어떻게 나가는지 헷갈림
+;; 입출력 예시를 넣으면 이해하기 좋을듯
 (defn- remove-complete-steps
   "여러 완료된 step 들을 순서대로 제거합니다."
   [graph to-remove]
@@ -176,6 +180,10 @@
    graph
    (keys to-remove)))
 
+;; 전체적으로 복잡해서 눈으로 따라가기 힘듦
+;; loop 대신 iterate , take-while 을 사용하는 방법이 있음
+;; 다른 사람들이 작성한 코드 참고해보기
+;; loop 가 많다는건 절차지향적이라는 신호
 (defn- calculate-working-duration
   [workers step-graph]
   (loop [duration 0
