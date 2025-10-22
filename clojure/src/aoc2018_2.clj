@@ -62,6 +62,8 @@
        (count)
        (= 1)))
 
+;; 함수의 가독성을 더 높히는 방향에 대한 고민
+;; 여러 시행착오를 시도 및 기록하면 좋을듯
 (defn- find-similar-box-ids
   [box-ids]
   (loop [[box-id & remain-box-ids] box-ids]
