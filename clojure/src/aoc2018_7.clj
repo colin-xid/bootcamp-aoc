@@ -56,9 +56,9 @@
 (defn- add-step-edge
   "단일 지침을 기반으로 그래프에 edge 를 추가합니다."
   [acc {:keys [start end]}]
-  (if (contains? acc start)
-    (update-in acc [end :parent] (fnil conj (sorted-set)) start)
-    (assoc acc start {})))
+  (-> acc
+      (update-in [start :child] (fnil conj (sorted-set)) end)
+      (update-in [end :parent] (fnil conj (sorted-set)) start)))
 
 (defn- has-no-parent?
   "주어진 step 에 :parent 가 없는지 확인합니다."
@@ -137,3 +137,59 @@
 ;;   15        .          .       CABFDE
 ;; ```
 ;; 15초가 걸리므로 답은 15
+
+(defn- find-next-available-step
+  "작업중인 스탭을 제외하고 parent 가 없는 스탭을 반환합니다."
+  [steps working-steps]
+  (->> (remove (fn [[step-key _]]
+                 (contains? (set working-steps) step-key)) steps)
+       (next-available-step)))
+
+(defn- step-duration
+  "문자열 A-Z 를 받아 작업에 걸리는 시간인 61-86 을 리턴합니다."
+  [step]
+  (- (int (first step)) 4))
+
+(defn- fill-workers
+  "작업 목록에 step key 와 소요시간을 할당합니다."
+  [workers steps]
+  (->> (loop [workers (into {} (filter #(not (= 0 (val %))) workers))]
+         (let [next-step (find-next-available-step steps (keys workers))]
+           (if (and next-step (< (count workers) 5))
+             (recur (assoc workers next-step (step-duration next-step)))
+             workers)))))
+
+(defn- process-work
+  "작업을 min duration 만큼 실행합니다."
+  [min-duration filled-workers]
+  (reduce (fn [acc worker]
+            (assoc acc (key worker) (- (val worker) min-duration)))
+          filled-workers
+          filled-workers))
+
+(defn- remove-complete-steps
+  "여러 완료된 step 들을 순서대로 제거합니다."
+  [graph to-remove]
+  (reduce
+   (fn [acc step]
+     (complete-step acc step))
+   graph
+   (keys to-remove)))
+
+(defn- calculate-working-duration
+  [workers step-graph]
+  (loop [duration 0
+         workers workers
+         graph step-graph]
+    (let [filled-workers (fill-workers workers graph)]
+      (if (empty? filled-workers)
+        duration
+        (let [min-duration (apply min (vals filled-workers))
+              remain-work (process-work min-duration filled-workers)]
+          (->> (filter #(= 0 (val %)) remain-work)
+               (remove-complete-steps graph)
+               (recur (+ duration min-duration) remain-work)))))))
+
+(->> (read-lines "2018_7.txt")
+     (build-step-graph)
+     (calculate-working-duration {}))
