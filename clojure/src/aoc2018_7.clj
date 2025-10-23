@@ -181,16 +181,16 @@
   "모든 작업자에게 min duration 을 동일하게 소비해 남은 시간을 갱신합니다.
    
    input
-   filled-workers : {E 65, F 66, M 73, T 80}
+   assigned-workers : {E 65, F 66, M 73, T 80}
    min-duration : 65
 
    output
    {E 0, F 1, M 8, T 15}
    "
-  [min-duration filled-workers]
+  [min-duration assigned-workers]
   (->> (map (fn [[step-key step-duration]]
               {step-key (- step-duration min-duration)})
-            filled-workers)
+            assigned-workers)
        (into {})))
 
 (defn- remove-complete-steps
@@ -213,9 +213,9 @@
 (defn- do-work
   "worker 에 작업을 할당하고 하나가 끝날때까지 작업을 수행합니다."
   [{:keys [duration workers graph]}]
-  (let [filled-workers (assign-workers workers graph)
-        min-duration (apply min (vals filled-workers))
-        remain-workers (process-work min-duration filled-workers)]
+  (let [assigned-workers (assign-workers workers graph)
+        min-duration (apply min (vals assigned-workers))
+        remain-workers (process-work min-duration assigned-workers)]
     {:duration (+ min-duration duration)
      :workers remain-workers
      :graph (->> (filter #(= 0 (val %)) remain-workers)
