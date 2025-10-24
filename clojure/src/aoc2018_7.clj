@@ -84,7 +84,7 @@
    {A {:parrent C D}}
    "
   [graph complete-step]
-  (->> (remove (fn [[step-key _]] (= step-key complete-step)) graph)
+  (->> (dissoc graph complete-step)
        (map
         (fn [[step-key {parents :parent}]]
           {step-key {:parent (disj parents complete-step)}}))
@@ -92,16 +92,16 @@
 
 (defn process-step
   "현재 그래프에서 다음 실행 가능한 step 을 선택하고, 해당 step 을 완료 처리한 그래프를 반환합니다."
-  [{graph :graph}]
+  [{graph :steps}]
   (let [next-step (next-available-step graph)]
     {:next-step next-step
-     :graph (complete-step graph next-step)}))
+     :steps (complete-step graph next-step)}))
 
 (defn- determine-step-order
   "주어진 그래프를 수행 가능한 순서대로 반환합니다."
   [step-graph]
   (->> {:next-step ""
-        :graph step-graph}
+        :steps step-graph}
        (iterate process-step)
        (take-while #(:next-step %))
        (map :next-step)
@@ -166,16 +166,26 @@
   [next-step active-workers]
   (and next-step (< (count active-workers) 5)))
 
+(defn- find-active-workers
+  "작업이 완료된 worker 를 제외한 active worker 를 반환합니다."
+  [workers]
+  (->> workers
+       (remove (comp zero? val))
+       (into {})))
+
 (defn- assign-workers
   "작업 목록에 할당 가능한 step 과 소요시간을 할당합니다."
   [workers steps]
-  (->> (loop [active-workers (->> workers
-                                  (filter #(not (= 0 (val %))))
-                                  (into {}))]
+  (->> (loop [active-workers (find-active-workers workers)]
          (let [next-step (find-next-available-step steps (keys active-workers))]
            (if (assignable? next-step active-workers)
              (recur (assoc active-workers next-step (step-duration next-step)))
              active-workers)))))
+
+(defn- apply-duration
+  "step 의 duration 을 소비합니다."
+  [min-duration [step-key step-duration]]
+  {step-key (- step-duration min-duration)})
 
 (defn- process-work
   "모든 작업자에게 min duration 을 동일하게 소비해 남은 시간을 갱신합니다.
@@ -188,9 +198,7 @@
    {E 0, F 1, M 8, T 15}
    "
   [min-duration assigned-workers]
-  (->> (map (fn [[step-key step-duration]]
-              {step-key (- step-duration min-duration)})
-            assigned-workers)
+  (->> (map (partial apply-duration min-duration) assigned-workers)
        (into {})))
 
 (defn- remove-complete-steps
@@ -203,33 +211,33 @@
    output
    {C {:parrent A D}}
    "
-  [graph to-remove]
+  [steps to-remove]
   (reduce
    (fn [acc step]
      (complete-step acc step))
-   graph
+   steps
    to-remove))
 
 (defn- do-work
   "worker 에 작업을 할당하고 하나가 끝날때까지 작업을 수행합니다."
-  [{:keys [duration workers graph]}]
-  (let [assigned-workers (assign-workers workers graph)
+  [{:keys [duration workers steps]}]
+  (let [assigned-workers (assign-workers workers steps)
         min-duration (apply min (vals assigned-workers))
         remain-workers (process-work min-duration assigned-workers)]
     {:duration (+ min-duration duration)
      :workers remain-workers
-     :graph (->> (filter #(= 0 (val %)) remain-workers)
+     :steps (->> (filter #(= 0 (val %)) remain-workers)
                  (keys)
-                 (remove-complete-steps graph))}))
+                 (remove-complete-steps steps))}))
 
 (defn- calculate-working-duration
   "작업을 모두 완료하는데 걸리는 시간을 계산합니다."
   [workers step-graph]
   (->> {:duration 0
         :workers workers
-        :graph step-graph}
+        :steps step-graph}
        (iterate do-work)
-       (drop-while #(seq (:graph %)))
+       (drop-while #(seq (:steps %)))
        first
        :duration))
 
