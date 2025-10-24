@@ -116,10 +116,10 @@
 ;; 모든 필드의 기준에 맞는 여권의 수를 반환하여라.
 
 (defn- num-between?
-  "문자열이 숫자로만 이루어져 있고 n1 이상 n2 이하인지를 검사합니다."
+  "문자열이 숫자로만 이루어져 있고 x 이상 y 이하인지를 검사합니다."
   [x input y]
-  (when-let [input (re-matches #"^\d+$" input)]
-    (<= x (parse-long input) y)))
+  (when-let [input' (re-matches #"^\d+$" input)]
+    (<= x (parse-long input') y)))
 
 (defn- valid-height?
   "입력값이 cm 또는 in 단위의 유효한 키(height)인지 검사합니다."
